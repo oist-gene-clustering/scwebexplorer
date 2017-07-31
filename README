@@ -1,0 +1,11 @@
+This project has been developed for an internship at the OIST in the Luscombe Unit in 2017.
+
+####################################################
+## About adding a new organism to the application ##
+####################################################
+
+Warning: the new SCESet should provide the gene expression matrix in the correct slot, depending on the unit (RPKM, FKPM, raw counts, etc.), see scater package documentation.
+
+See updateUtils.R file.
+
+
