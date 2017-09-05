@@ -162,6 +162,28 @@ clean <- function(ls) {
 # SCESET SELECTION FUNCTIONS #
 ##############################
 
+#' Get gene expression data from SCESet
+#'
+#' Gets gene expression data from an input SCESet.
+#'
+#' @param sceset the SCESet associated with the gene expression matrix of the new organism
+#' @return gene expression data
+#' 
+#' @importFrom scater counts
+#' @importFrom scater fpkm
+#' @importFrom scater tpm
+#' @importFrom scater cpm
+#' @importFrom scater exprs
+#' 
+#' @export
+getData <- function(sceset) {
+	if (!is.null(counts(sceset))) return(counts(sceset))
+	if (!is.null(fpkm(sceset))) return(fpkm(sceset))
+	if (!is.null(tpm(sceset))) return(tpm(sceset))
+	if (!is.null(cpm(sceset))) return(cpm(sceset))
+	if (!is.null(exprs(sceset))) return(exprs(sceset))
+}
+
 #' Return feature list
 #'
 #' Returns the list of features in the input SCESet.
@@ -241,14 +263,12 @@ selectGroupInSceset <- function(organism, cells=NULL, genes=NULL, hg=F) {
 #' 
 #' @importFrom grDevices heat.colors
 #' @importFrom graphics plot
-#' @importFrom scater counts
 #' @importFrom graphics rect
 #' @importFrom graphics text
 #' @importFrom graphics legend
 #' @importFrom graphics axis
 #' @importFrom shiny withProgress
 #' @importFrom shiny incProgress
-#' @importFrom scater counts
 #' 
 #' @export
 patternPlot <- function(genes, cells, oo, allGenes, thresholdType, threshold, thresholdDF, nb=1) {
@@ -258,7 +278,7 @@ patternPlot <- function(genes, cells, oo, allGenes, thresholdType, threshold, th
   sceset <- selectGroupInSceset(oo, lsCell, genes)
   if (is.null(sceset)) return(NULL)
   else {
-      res <- counts(sceset)
+      res <- getData(sceset)
       nbCells <- dim(res)[2]
       nbGenes <- length(genes)
       withProgress(message = paste("Computing pattern", nb), value = 0, {
@@ -299,7 +319,6 @@ patternPlot <- function(genes, cells, oo, allGenes, thresholdType, threshold, th
 #' 
 #' @importFrom grDevices heat.colors
 #' @importFrom graphics plot
-#' @importFrom scater counts
 #' @importFrom graphics rect
 #' @importFrom graphics text
 #' @importFrom graphics legend
@@ -307,7 +326,6 @@ patternPlot <- function(genes, cells, oo, allGenes, thresholdType, threshold, th
 #' @importFrom plotrix draw.circle
 #' @importFrom shiny withProgress
 #' @importFrom shiny incProgress
-#' @importFrom scater counts
 #' 
 #' @export
 patternPlotCelegans <- function(genes, cells, oo, allGenes, thresholdType, threshold, thresholdDF, nb=1) {
@@ -319,7 +337,7 @@ patternPlotCelegans <- function(genes, cells, oo, allGenes, thresholdType, thres
   sceset <- selectGroupInSceset(oo, lsCell, genes)
   if (is.null(sceset)) return(NULL)
   else {
-    res <- counts(sceset)
+    res <- getData(sceset)
     nbGenes <- length(genes)
     withProgress(message = paste("Computing pattern", nb), value = 0, {
       # pp <- plot(c(topside-110, (nbCells+1)*topside+10), c(leftside-10, (nbGenes+1)*leftside+10),
@@ -350,7 +368,6 @@ makeRectangles <- function(labels, ncol, nrow, center) {}
 #' 
 #' @importFrom grDevices heat.colors
 #' @importFrom graphics plot
-#' @importFrom scater counts
 #' @importFrom graphics rect
 #' @importFrom graphics text
 #' @importFrom graphics legend
@@ -358,7 +375,6 @@ makeRectangles <- function(labels, ncol, nrow, center) {}
 #' @importFrom plotrix draw.circle
 #' @importFrom shiny withProgress
 #' @importFrom shiny incProgress
-#' @importFrom scater counts
 #' 
 #' @export
 # patternPlotCiona <- function(genes, cells, oo, allGenes, thresholdType, threshold, thresholdDF, nb=1) {
@@ -369,7 +385,7 @@ makeRectangles <- function(labels, ncol, nrow, center) {}
 #   sceset <- selectGroupInSceset(oo, lsCell, genes)
 #   if (is.null(sceset)) return(NULL)
 #   else {
-#     res <- counts(sceset)
+#     res <- getData(sceset)
 #     nbGenes <- length(genes)
 #     withProgress(message = paste("Computing pattern", nb), value = 0, {
 #       incProgress(1/4, detail = paste("Computation", nb))
@@ -442,13 +458,12 @@ makeRectangles <- function(labels, ncol, nrow, center) {}
 #' @importFrom ggplot2 ggtitle
 #' @importFrom ggplot2 theme
 #' @importFrom stats prcomp
-#' @importFrom scater counts
 #' 
 #' @export
 customPCAPlot <- function(oo, main, genes=NULL) {
   data <- pcaPlots[[oo]][["data"]]
   df <- pcaPlots[[oo]][["df"]]
-  if (!is.null(genes)) data <- prcomp(t(counts(getSceset[[oo]]))[, genes])
+  if (!is.null(genes)) data <- prcomp(t(getData(getSceset[[oo]]))[, genes])
   gp = autoplot(data, data=df, label=F, shape=F)
   gp = gp + geom_label(aes(label=label, colour=colour)) + scale_colour_brewer(palette="Set1")
   gp = gp + ggtitle(main) + theme(plot.title=element_text(hjust=0.5))
@@ -473,7 +488,6 @@ customPCAPlot <- function(oo, main, genes=NULL) {
 #' @importFrom stats prcomp
 #' @importFrom shiny withProgress
 #' @importFrom shiny incProgress
-#' @importFrom scater counts
 #' @importFrom ggfortify autoplot
 #' 
 #' @export
@@ -483,7 +497,7 @@ customPCABiPlot <- function(oo, main, genes=NULL) {
     sceset <- getSceset(oo)
     if (!is.null(genes)) sceset <- sceset[genes, ]
     incProgress(2/4, detail = "Performing PCA...")
-    trimmedData <- counts(sceset)[apply(counts(sceset), 1, function(x) !(var(x) == 0)), ]
+    trimmedData <- getData(sceset)[apply(getData(sceset), 1, function(x) !(var(x) == 0)), ]
     trimmedData <- log(t(trimmedData)+1)
     if (any(apply(trimmedData, 2, function(x) (var(x) == 0))) > 0) return(NULL)
     df <- pcaPlots[[oo]]$df
@@ -576,7 +590,6 @@ drawCell <- function(lsGene, lsCell, res, thresholdType, thresholdBinary, thresh
 #' @importFrom BiocGenerics order
 #' @importFrom shiny withProgress
 #' @importFrom shiny incProgress
-#' @importFrom scater counts
 #' @importFrom SummarizedExperiment assay
 #' 
 #' @export
@@ -585,9 +598,9 @@ mastComputation <- function(organism, lsGene, lsCell1, lsCell2) {
   sceset <- selectGroupInSceset(organism, cells=c(lsCell1, lsCell2), genes=lsGene)
   withProgress(message = "Set: MAST computation", value = 0, {
     incProgress(1/4, detail = "Fetching data...")
-    res <- counts(sceset)
+    res <- getData(sceset)
     if (is.null(res)) return(NULL)
-    res <- apply(res, 2, function(x) {storage.mode(x) <- 'integer'; x})
+    res <- apply(as.integer(res), 2, function(x) {storage.mode(x) <- 'integer'; x})
     log_counts <- log(res+1)/log(2)
     fData <- data.frame(names=rownames(log_counts), row.names = rownames(log_counts))
     groups <- factor(c(rep("group #1", length(lsCell1)), rep("group #2", length(lsCell2))), 

@@ -42,7 +42,7 @@ shinyServer(function(input, output, session) {
     if (is.null(input$organism)) return(NULL)
     values$geneSelection <- input$geneData_rows_selected
     ## Housekeeping for "max number of DLL reached" ##
-    R.utils::gcDLLs()
+    #R.utils::gcDLLs()
   })
   
   getSelectedGenes <- function() {
@@ -307,7 +307,7 @@ shinyServer(function(input, output, session) {
     if (is.null(plottingMAST$pvalue)) {
       withProgress(message = "Retrieving data...", value = 0, {
         incProgress(1/2, detail = "")
-        values$genedata <- counts(selectGroupInSceset(input$organism, cells[[input$organism]][[input$stage]]))
+        values$genedata <- getData(selectGroupInSceset(input$organism, cells[[input$organism]][[input$stage]]))
         incProgress(1, detail = "Done!")
       })
     }
@@ -315,7 +315,7 @@ shinyServer(function(input, output, session) {
     else {
       pvalue <- plottingMAST$pvalue
       values$genedata <- as.data.frame(cbind(data.matrix(pvalue), 
-                       counts(selectGroupInSceset(input$organism, cells=values$lsCell, values$lsGene))[row.names(pvalue), ]))
+                       getData(selectGroupInSceset(input$organism, cells=values$lsCell, values$lsGene))[row.names(pvalue), ]))
     }
     return(rn(values$genedata))
   },
@@ -422,7 +422,7 @@ shinyServer(function(input, output, session) {
     if (length(values$geneSelection) > 0 & !is.null(clean(input$cells1)) & !is.null(clean(input$cells2)) & !is.null(input$organism)) {
     withProgress(message="Computing gene expression value bounds", value=0, {
       incProgress(1/6, detail="Getting values...")
-      res <- rn(counts(selectGroupInSceset(input$organism, cells=c(clean(input$cells1), 
+      res <- rn(getData(selectGroupInSceset(input$organism, cells=c(clean(input$cells1), 
                                                                    clean(input$cells2)), getSelectedGenes())))
       if (is.null(res)) return(NULL)
       res <- data.matrix(res)
@@ -559,7 +559,7 @@ shinyServer(function(input, output, session) {
     if (is.null(input$organism) | is.null(input$stage)) return(NULL)
     resSceset <- rn(selectGroupInSceset(input$organism, cells[[input$organism]][[input$stage]]))
     if (is.null(resSceset)) return(NULL)
-    res <- rn(counts(resSceset))
+    res <- rn(getData(resSceset))
     row.names(res) <- values$allGenes
     # Number of highly-expressed genes selected #
     number = min(10, dim(res)[1])

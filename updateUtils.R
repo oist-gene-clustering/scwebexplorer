@@ -4,6 +4,28 @@ library(scater)
 ## Please refer to README in order to add a new organism to the application ##
 ##############################################################################
 
+#' Get gene expression data from SCESet
+#'
+#' Gets gene expression data from an input SCESet.
+#'
+#' @param sceset the SCESet associated with the gene expression matrix of the new organism
+#' @return gene expression data
+#' 
+#' @importFrom scater counts
+#' @importFrom scater fpkm
+#' @importFrom scater tpm
+#' @importFrom scater cpm
+#' @importFrom scater exprs
+#' 
+#' @export
+getData <- function(sceset) {
+	if (!is.null(counts(sceset))) return(counts(sceset))
+	if (!is.null(fpkm(sceset))) return(fpkm(sceset))
+	if (!is.null(tpm(sceset))) return(tpm(sceset))
+	if (!is.null(cpm(sceset))) return(cpm(sceset))
+	if (!is.null(exprs(sceset))) return(exprs(sceset))
+}
+
 # Step 1: create the gene expression matrix M with features as rows and conditions as columns, for organism oo
 # Step 2: create the vectors associated with gene names genes, number of stage s, cell id id, 
 # embryo e and replicate r (optional for replicates)
@@ -20,7 +42,7 @@ library(scater)
   # names(groupedScesets) <- organisms
   # houseKeepGenes <- c("^ERCC-*")
   # pcaPlots <- lapply(lapply(scesets, function(x) x[row.names(x)[!grepl(houseKeepGenes, row.names(x))], ]), 
-  #                    function(x) c(data=list(prcomp(t(counts(x)))), 
+  #                    function(x) c(data=list(prcomp(t(getData(x)))), 
   #                                  df=list(data.frame(label=data.frame(label=pData(x)[, "Cell.ID"]), 
   #                                                     colour=data.frame(colour=paste("Embryo", pData(x)$Embryo))))))
   # names(pcaPlots) <- organisms
@@ -48,7 +70,6 @@ library(scater)
 #' be explicit and non ambiguous-
 #' 
 #' @importFrom scater pData
-#' @importFrom scater counts
 #' @importFrom stats prcomp
 #' 
 #' @export
@@ -64,7 +85,7 @@ updateUtils <- function(newOrganismName, newOrganismSceset, houseKgene=NULL, pat
     names(groupedScesets) <- organisms
     ## PCA computation for each dataset ##
     s <- newOrganismSceset[row.names(newOrganismSceset)[!grepl(houseKeepGenes, row.names(newOrganismSceset))], ]
-    pcaPlots <- append(pcaPlots, list(c(data=list(prcomp(t(counts(s)))), 
+    pcaPlots <- append(pcaPlots, list(c(data=list(prcomp(t(getData(s)))), 
                                    df=list(data.frame(label=data.frame(label=pData(s)[, "Cell.ID"]), 
                                    colour=data.frame(colour=paste("Embryo", pData(s)$Embryo)))))))
     names(pcaPlots) <- organisms
@@ -98,7 +119,6 @@ updateUtils <- function(newOrganismName, newOrganismSceset, houseKgene=NULL, pat
 #' 
 #' @importFrom scater pData 
 #' @importFrom scater varMetadata
-#' @importFrom scater counts
 #' @importFrom scater newSCESet
 #' @importFrom methods new
 #' 
@@ -109,7 +129,7 @@ groupSceset <- function(sceset) {
   cells <- unique(pData(sceset)[, "Cell.ID"])
   tmp <- sapply(cells, function(cell) {
       s <- sceset[, pData(sceset)[, "Cell.ID"] == cell]
-      if (length(colnames(s)) < 2) counts(s) else rowSums(counts(s))
+      if (length(colnames(s)) < 2) getData(s) else rowSums(getData(s))
     })
   phenodata <- as.data.frame(cbind(cells, pData(sceset)[sapply(cells, 
                function(cell) which(pData(sceset)[, "Cell.ID"] == cell)[1]), 2:dim(pData(sceset))[2]]))
